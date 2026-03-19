@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RakshakAI 🛡️</title>
     <link rel="stylesheet" href="/static/style.css" />
+    <style>
+      .evidence-link {
+        color: #00ff88;
+        text-decoration: none;
+      }
+
+      .evidence-link:hover {
+        text-decoration: underline;
+      }
+    </style>
   </head>
   <body>
     <div class="logo">🛡️</div>
@@ -43,6 +53,16 @@
       <div class="info-card">
         <div class="label">System</div>
         <div class="value" id="systemStatus">Online ✓</div>
+      </div>
+      <div class="info-card">
+        <div class="label">Sound Status</div>
+        <div class="value" id="soundStatus">Listening...</div>
+      </div>
+      <div class="info-card">
+        <div class="label">Evidence</div>
+        <div class="value">
+          <a href="/evidence_viewer">View All</a>
+        </div>
       </div>
     </div>
 

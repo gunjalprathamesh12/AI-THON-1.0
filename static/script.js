@@ -1,5 +1,6 @@
 let alertCount = 0;
 let userLocation = null;
+let sharedStream = null;
 
 // Get GPS Location
 navigator.geolocation.getCurrentPosition(
@@ -110,11 +111,19 @@ let mediaRecorder = null;
 let recordedChunks = [];
 
 async function startRecording() {
+  // Already recording असेल तर skip करा
+  if (mediaRecorder && mediaRecorder.state === "recording") {
+    console.log("Already recording!");
+    return;
+  }
+
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
+    const stream =
+      sharedStream ||
+      (await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      }));
 
     recordedChunks = [];
     mediaRecorder = new MediaRecorder(stream);
@@ -170,3 +179,51 @@ async function uploadEvidence(blob) {
         "Status: Upload Failed ❌";
     });
 }
+
+// Sound Detection
+let audioContext = null;
+let analyser = null;
+let soundAlertSent = false;
+
+async function startSoundDetection() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: true,
+    });
+
+    sharedStream = stream;
+
+    audioContext = new AudioContext();
+    analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyser);
+    analyser.fftSize = 256;
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    setInterval(() => {
+      analyser.getByteFrequencyData(dataArray);
+      const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
+      if (average > 50) {
+        document.getElementById("soundStatus").textContent =
+          `🔊 ${Math.round(average)}dB`;
+      } else {
+        document.getElementById("soundStatus").textContent = "Listening...";
+        soundAlertSent = false;
+      }
+
+      if (average > 80 && !soundAlertSent) {
+        soundAlertSent = true;
+        document.getElementById("soundStatus").textContent =
+          "🚨 Scream Detected!";
+        sendAlert("Sound - Loud Scream Detected");
+      }
+    }, 500);
+  } catch (err) {
+    console.error("Mic access denied:", err);
+  }
+}
+
+startSoundDetection();
