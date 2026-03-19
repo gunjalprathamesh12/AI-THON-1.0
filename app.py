@@ -1,11 +1,34 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
+from twilio.rest import Client
+from dotenv import load_dotenv
 import os
 from datetime import datetime
+
+load_dotenv()
 
 app = Flask(__name__)
 
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Twilio Details — .env मधून येतात
+TWILIO_SID = os.getenv('TWILIO_SID')
+TWILIO_TOKEN = os.getenv('TWILIO_TOKEN')
+TWILIO_NUMBER = os.getenv('TWILIO_NUMBER')
+EMERGENCY_NUMBER = os.getenv('EMERGENCY_NUMBER')
+
+client = Client(TWILIO_SID, TWILIO_TOKEN)
+
+def send_whatsapp_alert(trigger_type, location, timestamp):
+    try:
+        message = client.messages.create(
+            body=f"🚨 RakshakAI ALERT!\n\nTrigger: {trigger_type}\nLocation: {location}\nTime: {timestamp}\n\nEvidence automatically captured!",
+            from_=TWILIO_NUMBER,
+            to=EMERGENCY_NUMBER
+        )
+        print(f"✅ WhatsApp Alert sent! SID: {message.sid}")
+    except Exception as e:
+        print(f"❌ WhatsApp Alert failed: {e}")
 
 @app.route('/')
 def index():
@@ -20,13 +43,14 @@ def trigger():
 
     print(f"🚨 ALERT! Trigger: {trigger_type} | Time: {timestamp} | Location: {location}")
 
-    # Location txt file save करा
     txt_filename = f"evidence_{file_timestamp}.txt"
     txt_filepath = os.path.join(UPLOAD_FOLDER, txt_filename)
     with open(txt_filepath, 'w') as f:
         f.write(f"Timestamp  : {timestamp}\n")
         f.write(f"Trigger    : {trigger_type}\n")
         f.write(f"Location   : {location}\n")
+
+    send_whatsapp_alert(trigger_type, location, timestamp)
 
     return jsonify({
         'status': 'success',
