@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RakshakAI 🛡️</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="logo">🛡️</div>
+    <h1>RakshakAI</h1>
+    <p class="tagline">Evidence captures itself — so you don't have to.</p>
+
+    <div class="status-box">
+      <div class="status-indicator" id="statusDot"></div>
+      <div class="status-text" id="statusText">Monitoring Active</div>
+      <p class="status-sub">Watching for suspicious activity...</p>
+    </div>
+
+    <div class="alert-box" id="alertBox">
+      <div class="alert-title">🚨 ALERT TRIGGERED!</div>
+      <p class="alert-info" id="alertType">Type: —</p>
+      <p class="alert-info" id="alertTime">Time: —</p>
+      <p class="alert-info" id="alertLocation">Location: —</p>
+      <p class="alert-info" id="alertStatus">Status: —</p>
+    </div>
+
+    <button class="sos-btn" onclick="triggerSOS()">SOS</button>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="label">Motion Status</div>
+        <div class="value" id="motionStatus">Waiting...</div>
+      </div>
+      <div class="info-card">
+        <div class="label">Location</div>
+        <div class="value" id="locationStatus">Fetching...</div>
+      </div>
+      <div class="info-card">
+        <div class="label">Alerts Today</div>
+        <div class="value" id="alertCount">0</div>
+      </div>
+      <div class="info-card">
+        <div class="label">System</div>
+        <div class="value" id="systemStatus">Online ✓</div>
+      </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+  </body>
+</html>
