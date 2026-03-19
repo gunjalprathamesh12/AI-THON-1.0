@@ -58,5 +58,25 @@ def list_evidence():
         'files': files
     })
 
+@app.route('/upload_evidence', methods=['POST'])
+def upload_evidence():
+    if 'file' not in request.files:
+        return jsonify({'status': 'error', 'message': 'No file'})
+    
+    file = request.files['file']
+    location = request.form.get('location', 'unknown')
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    filename = f"evidence_{timestamp}.webm"
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(filepath)
+    
+    print(f"✅ Video Evidence saved: {filename} | Location: {location}")
+    
+    return jsonify({
+        'status': 'success',
+        'message': f'Evidence saved: {filename}'
+    })
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

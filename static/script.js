@@ -9,7 +9,7 @@ navigator.geolocation.getCurrentPosition(
     userLocation = `${lat}, ${lon}`;
 
     fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en`,
     )
       .then((res) => res.json())
       .then((data) => {
@@ -66,9 +66,13 @@ function sendAlert(type) {
       document.getElementById("alertStatus").textContent =
         `Status: Save Failed ❌`;
     });
+  startRecording();
 }
 
-// Motion Detection
+// Continuous Jerk Detection
+let jerkCount = 0;
+let jerkTimer = null;
+
 window.addEventListener("devicemotion", (event) => {
   const acc = event.accelerationIncludingGravity;
   if (!acc) return;
@@ -76,14 +80,93 @@ window.addEventListener("devicemotion", (event) => {
   const total = Math.abs(acc.x) + Math.abs(acc.y) + Math.abs(acc.z);
 
   if (total > 25) {
-    document.getElementById("motionStatus").textContent = "⚠️ Jerk Detected!";
-    sendAlert("Motion - Sudden Jerk");
-  } else {
-    document.getElementById("motionStatus").textContent = "Normal ✓";
+    jerkCount++;
+    document.getElementById("motionStatus").textContent =
+      `⚠️ Jerk ${jerkCount}/3`;
+
+    clearTimeout(jerkTimer);
+    jerkTimer = setTimeout(() => {
+      jerkCount = 0;
+      document.getElementById("motionStatus").textContent = "Normal ✓";
+    }, 2000);
+
+    if (jerkCount >= 3) {
+      jerkCount = 0;
+      clearTimeout(jerkTimer);
+      document.getElementById("motionStatus").textContent =
+        "🚨 Attack Detected!";
+      sendAlert("Motion - Continuous Jerk Attack");
+    }
   }
 });
 
 // SOS Button
 function triggerSOS() {
   sendAlert("Manual SOS");
+}
+
+// Media Recording
+let mediaRecorder = null;
+let recordedChunks = [];
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        recordedChunks.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: "video/webm" });
+      uploadEvidence(blob);
+    };
+
+    mediaRecorder.start();
+    console.log("Recording started!");
+
+    setTimeout(() => {
+      stopRecording();
+    }, 30000);
+  } catch (err) {
+    console.error("Camera/Mic access denied:", err);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+    console.log("Recording stopped!");
+  }
+}
+
+async function uploadEvidence(blob) {
+  const formData = new FormData();
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  formData.append("file", blob, `evidence_${timestamp}.webm`);
+  formData.append("location", userLocation || "unknown");
+
+  fetch("/upload_evidence", {
+    method: "POST",
+    body: formData,
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("Evidence uploaded:", data);
+      document.getElementById("alertStatus").textContent =
+        "Status: Evidence Uploaded ✅";
+    })
+    .catch((err) => {
+      console.error("Upload failed:", err);
+      document.getElementById("alertStatus").textContent =
+        "Status: Upload Failed ❌";
+    });
 }
