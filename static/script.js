@@ -49,6 +49,10 @@ function sendAlert(type) {
   document.getElementById("alertStatus").textContent =
     `Status: Saving evidence...`;
 
+  // Recording indicator
+  document.getElementById("statusText").textContent = "🔴 Recording...";
+  document.getElementById("statusDot").style.background = "#ff0000";
+
   fetch("/trigger", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -111,7 +115,6 @@ let mediaRecorder = null;
 let recordedChunks = [];
 
 async function startRecording() {
-  // Already recording असेल तर skip करा
   if (mediaRecorder && mediaRecorder.state === "recording") {
     console.log("Already recording!");
     return;
@@ -121,7 +124,7 @@ async function startRecording() {
     const stream =
       sharedStream ||
       (await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: { facingMode: "environment" },
         audio: true,
       }));
 
@@ -189,10 +192,13 @@ async function startSoundDetection() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: true,
-      video: true,
+      video: { facingMode: "environment" },
     });
 
     sharedStream = stream;
+
+    // Camera Active UI update
+    document.getElementById("statusText").textContent = "Camera Active 🎥";
 
     audioContext = new AudioContext();
     analyser = audioContext.createAnalyser();
@@ -227,3 +233,4 @@ async function startSoundDetection() {
 }
 
 startSoundDetection();
+  
